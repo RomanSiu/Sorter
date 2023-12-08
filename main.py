@@ -1,8 +1,9 @@
+import concurrent.futures
 from pathlib import Path
 from sys import argv
 from threading import Thread
 from os import mkdir, rename
-from time import time
+from time import time, sleep
 
 timer = time()
 
@@ -14,7 +15,6 @@ CATEGORIES = {"Images": [".jpg", ".gif", ".png", ".svg"],
               }
 
 folder_lst = ["Images", "Audio", "Documents", "Video", "Archives", "Others"]
-threads = []
 
 
 def get_category(file):
@@ -32,11 +32,12 @@ def make_file_path(file, cat):
     return file_path + file.name
 
 
-def move_file(file, new_file_path):
+def move_file(file: list):
+    new_file = same_file_check(file[1])
     # thread = Thread(target=rename, args=(file, new_file_path))
     # thread.start()
     # threads.append(thread)
-    rename(file, new_file_path)
+    rename(file[0], new_file)
 
 
 def del_dirs(path):
@@ -45,6 +46,11 @@ def del_dirs(path):
             continue
         else:
             directory.rmdir()
+
+
+def del_dir(path, thread):
+    thread.join()
+    path.rmdir()
 
 
 def same_file_check(file):
@@ -63,20 +69,28 @@ def same_file_check(file):
 
 
 def handler(path):
+    path_lst = []
+    threads = []
+
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
-            handler(file)
+            thread = Thread(target=handler, args=(file, ))
+            thread.start()
+            del_dir(file, thread)
+            # threads.append(thread)
             continue
         elif file.is_dir() and file.name in folder_lst:
             continue
         
         cat = get_category(file)
         new_path = make_file_path(file, cat)
-        new_path = same_file_check(new_path)
-        move_file(file, new_path)
+        path_lst.append([file, new_path])
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1000)
+    futures = [executor.submit(move_file, path) for path in path_lst]
+    done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
 
-    [th.join() for th in threads]
-    del_dirs(path)
+    # [el.join() for el in threads]
+    # del_dirs(path)
         
 
 if __name__ == "__main__":
@@ -86,5 +100,7 @@ if __name__ == "__main__":
         print("Use path as an argument")
         exit()
     main_path = Path(" ".join(argv[1:]))
-    handler(main_path)
+    main_thread = Thread(target=handler, args=(main_path, ))
+    main_thread.start()
+    main_thread.join()
     print(time() - timer)
