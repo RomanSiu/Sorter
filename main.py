@@ -1,7 +1,7 @@
 from pathlib import Path
 from sys import argv
 from threading import Thread
-from os import mkdir, rename
+from os import mkdir, replace
 from time import time
 
 timer = time()
@@ -14,7 +14,6 @@ CATEGORIES = {"Images": [".jpg", ".gif", ".png", ".svg"],
               }
 
 folder_lst = ["Images", "Audio", "Documents", "Video", "Archives", "Others"]
-threads = []
 
 
 def get_category(file):
@@ -33,10 +32,10 @@ def make_file_path(file, cat):
 
 
 def move_file(file, new_file_path):
-    # thread = Thread(target=rename, args=(file, new_file_path))
-    # thread.start()
+    thread = Thread(target=replace, args=(file, new_file_path))
+    thread.start()
     # threads.append(thread)
-    rename(file, new_file_path)
+    # replace(file, new_file_path)
 
 
 def del_dirs(path):
@@ -63,9 +62,13 @@ def same_file_check(file):
 
 
 def handler(path):
+    threads = []
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
-            handler(file)
+            thread = Thread(target=handler, args=(file, ))
+            thread.start()
+            threads.append(thread)
+            # handler(file)
             continue
         elif file.is_dir() and file.name in folder_lst:
             continue
