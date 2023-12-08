@@ -1,7 +1,7 @@
 from pathlib import Path
 from sys import argv
 from threading import Thread
-from os import mkdir, replace
+from os import mkdir, rename, listdir
 from time import time
 
 timer = time()
@@ -32,7 +32,7 @@ def make_file_path(file, cat):
 
 
 def move_file(file, new_file_path):
-    thread = Thread(target=replace, args=(file, new_file_path))
+    thread = Thread(target=rename, args=(file, new_file_path, ))
     thread.start()
     # threads.append(thread)
     # replace(file, new_file_path)
@@ -43,7 +43,13 @@ def del_dirs(path):
         if directory.is_dir() and directory.name in folder_lst:
             continue
         else:
-            directory.rmdir()
+            ...
+            # while True:
+            #     dir_lst = listdir(directory)
+            #     if dir_lst:
+            #         print(dir_lst)
+            #     else:
+            #         break
 
 
 def same_file_check(file):
