@@ -2,7 +2,7 @@ import concurrent.futures
 from pathlib import Path
 from sys import argv
 from threading import Thread
-from os import mkdir, replace, listdir
+from os import mkdir, rename, listdir
 from time import time
 
 timer = time()
@@ -15,6 +15,7 @@ CATEGORIES = {"Images": [".jpg", ".gif", ".png", ".svg"],
               }
 
 folder_lst = ["Images", "Audio", "Documents", "Video", "Archives", "Others"]
+threads = []
 
 
 def get_category(file):
@@ -32,12 +33,10 @@ def make_file_path(file, cat):
     return file_path + file.name
 
 
-def move_file(file: list):
-    new_file = same_file_check(file[1])
-    # thread = Thread(target=rename, args=(file, new_file_path))
-    # thread.start()
-    # threads.append(thread)
-    replace(file[0], new_file)
+def move_file(file, new_file_path):
+    thread = Thread(target=rename, args=(file, new_file_path))
+    thread.start()
+    threads.append(thread)
 
 
 def del_dirs(path):
@@ -67,25 +66,38 @@ def same_file_check(file):
     return file
 
 
-def handler(path):
-    path_lst = []
-
+def iter_dir(path):
+    dirs = []
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
-            thread = Thread(target=handler, args=(file, ))
-            thread.start()
+            res = iter_dir(file)
+            if len(listdir(file)) == 0:
+                file.rmdir()
+                continue
+            dirs.append(file)
+            [dirs.append(r) for r in res]
             continue
         elif file.is_dir() and file.name in folder_lst:
             continue
-        
+    return dirs
+
+
+def dir_handler(path):
+    for file in path.iterdir():
+        if file.is_dir():
+            continue
         cat = get_category(file)
         new_path = make_file_path(file, cat)
-        path_lst.append([file, new_path])
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=50)
-    futures = [executor.submit(move_file, path) for path in path_lst]
-    done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+        move_file(file, new_path)
 
-    del_dirs(path)
+
+def handler(path):
+    dirs_lst = iter_dir(path)
+
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+    futures = [executor.submit(dir_handler, path) for path in dirs_lst]
+    done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+    print("complete")
         
 
 if __name__ == "__main__":
