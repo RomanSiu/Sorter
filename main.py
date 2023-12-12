@@ -1,8 +1,7 @@
-import concurrent.futures
 from pathlib import Path
 from sys import argv
 from threading import Thread
-from os import mkdir, rename, listdir
+from os import mkdir
 from time import time
 import shutil
 
@@ -34,10 +33,11 @@ def make_file_path(file, cat):
     return file_path + file.name
 
 
-def move_file(file, new_file_path):
-    thread = Thread(target=shutil.move, args=(file, new_file_path))
-    thread.start()
-    # rename(file, new_file_path)
+def move_file(file, new_file_path, param=False):
+    thread1 = Thread(target=shutil.move, args=(file, new_file_path))
+    thread1.start()
+    if param:
+        threads.append(thread1)
 
 
 def del_dirs(path):
@@ -45,11 +45,7 @@ def del_dirs(path):
         if directory.is_dir() and directory.name in folder_lst:
             continue
         else:
-            while True:
-                dir_list = list(directory.iterdir())
-                if len(dir_list) == 0:
-                    directory.rmdir()
-                    break
+            shutil.rmtree(directory)
 
 
 def same_file_check(file):
@@ -67,46 +63,45 @@ def same_file_check(file):
     return file
 
 
-def iter_dir(path):
-    dirs = []
+def handler(path):
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
-            res = iter_dir(file)
-            dirs.append(file)
-            [dirs.append(r) for r in res]
+            handler(file)
+            thread = Thread(target=dir_handler, args=(file, ))
+            thread.start()
+            threads.append(thread)
             continue
         elif file.is_dir() and file.name in folder_lst:
             continue
-    return dirs
 
 
 def dir_handler(path):
-    for file in path.iterdir():
+    lst = [i for i in path.iterdir()]
+    n = 0
+    for file in lst:
         if file.is_dir():
             continue
         cat = get_category(file)
         new_path = make_file_path(file, cat)
         new_path = same_file_check(new_path)
+        n += 1
+        if n == len(lst):
+            move_file(file, new_path, param=True)
+            continue
         move_file(file, new_path)
 
 
-def handler(path):
-    dirs_lst = iter_dir(path)
-    dirs_lst.append(path)
-
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=50)
-    futures = [executor.submit(dir_handler, path) for path in dirs_lst]
-    done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
-    iter_dir(path)
-
-
 if __name__ == "__main__":
-    # try:
-    #     arg = argv[1]
-    # except IndexError:
-    #     print("Use path as an argument")
-    #     exit()
-    # main_path = Path(" ".join(argv[1:]))
-    main_path = Path(r"C:\Users\User\Desktop\garbage_test")
-    handler(main_path)
+    try:
+        arg = argv[1]
+    except IndexError:
+        print("Use path as an argument")
+        exit()
+    main_path = Path(" ".join(argv[1:]))
+    main_thread = Thread(target=handler, args=(main_path,))
+    main_thread.start()
+    threads.append(main_thread)
+    dir_handler(main_path)
+    [dr.join() for dr in threads]
+    del_dirs(main_path)
     print(time() - timer)
