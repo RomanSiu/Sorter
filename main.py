@@ -3,6 +3,7 @@ from sys import argv
 from threading import Thread
 from os import mkdir, rename, listdir
 from time import time
+import shutil
 
 timer = time()
 
@@ -32,10 +33,10 @@ def make_file_path(file, cat):
 
 
 def move_file(file, new_file_path):
-    thread = Thread(target=rename, args=(file, new_file_path, ))
+    thread = Thread(target=shutil.move, args=(file, new_file_path, ))
     thread.start()
     # threads.append(thread)
-    # replace(file, new_file_path)
+    # shutil.move(file, new_file_path)
 
 
 def del_dirs(path):
