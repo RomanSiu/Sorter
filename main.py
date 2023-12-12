@@ -4,6 +4,7 @@ from sys import argv
 from threading import Thread
 from os import mkdir, rename, listdir
 from time import time
+import shutil
 
 timer = time()
 
@@ -37,6 +38,7 @@ def move_file(file, new_file_path):
     thread = Thread(target=rename, args=(file, new_file_path))
     thread.start()
     threads.append(thread)
+    # rename(file, new_file_path)
 
 
 def del_dirs(path):
@@ -84,28 +86,32 @@ def iter_dir(path):
 
 def dir_handler(path):
     for file in path.iterdir():
+        print(file)
         if file.is_dir():
             continue
         cat = get_category(file)
         new_path = make_file_path(file, cat)
+        new_path = same_file_check(new_path)
         move_file(file, new_path)
 
 
 def handler(path):
     dirs_lst = iter_dir(path)
+    dirs_lst.append(path)
 
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=50)
     futures = [executor.submit(dir_handler, path) for path in dirs_lst]
     done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
     print("complete")
         
 
 if __name__ == "__main__":
-    try:
-        arg = argv[1]
-    except IndexError:
-        print("Use path as an argument")
-        exit()
-    main_path = Path(" ".join(argv[1:]))
+    # try:
+    #     arg = argv[1]
+    # except IndexError:
+    #     print("Use path as an argument")
+    #     exit()
+    # main_path = Path(" ".join(argv[1:]))
+    main_path = Path(r"C:\Users\User\Desktop\garbage_test")
     handler(main_path)
     print(time() - timer)
