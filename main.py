@@ -35,9 +35,8 @@ def make_file_path(file, cat):
 
 
 def move_file(file, new_file_path):
-    thread = Thread(target=rename, args=(file, new_file_path))
+    thread = Thread(target=shutil.move, args=(file, new_file_path))
     thread.start()
-    threads.append(thread)
     # rename(file, new_file_path)
 
 
@@ -73,9 +72,6 @@ def iter_dir(path):
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
             res = iter_dir(file)
-            if len(listdir(file)) == 0:
-                file.rmdir()
-                continue
             dirs.append(file)
             [dirs.append(r) for r in res]
             continue
@@ -86,7 +82,6 @@ def iter_dir(path):
 
 def dir_handler(path):
     for file in path.iterdir():
-        print(file)
         if file.is_dir():
             continue
         cat = get_category(file)
@@ -102,8 +97,8 @@ def handler(path):
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=50)
     futures = [executor.submit(dir_handler, path) for path in dirs_lst]
     done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
-    print("complete")
-        
+    iter_dir(path)
+
 
 if __name__ == "__main__":
     # try:
