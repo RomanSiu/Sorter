@@ -11,7 +11,7 @@ CATEGORIES = {"Images": [".jpg", ".gif", ".png", ".svg"],
               "Audio": [".mp3", ".wav", ".flac", ".wma", ".ogg", ".amr"],
               "Documents": [".doc", ".docx", ".txt", ".rtf", ".pdf", ".epub", ".xls", ".xlsx", ".ppt", ".pptx"],
               "Video": [".avi", ".mp4", ".wmv", ".mov", ".mkv"],
-              "Archives": [".zip", ".tar", ".gztar", ".bztar", ".xztar"]
+              "Archives": [".zip", ".tar", ".gztar", ".bztar"]
               }
 
 folder_lst = ["Images", "Audio", "Documents", "Video", "Archives", "Others"]
