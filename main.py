@@ -1,7 +1,7 @@
 from pathlib import Path
 from sys import argv
 from threading import Thread
-from os import mkdir, rename, listdir
+from os import mkdir
 from time import time
 import shutil
 
@@ -32,11 +32,11 @@ def make_file_path(file, cat):
     return file_path + file.name
 
 
-def move_file(file, new_file_path):
-    thread = Thread(target=shutil.move, args=(file, new_file_path, ))
-    thread.start()
-    # threads.append(thread)
-    # shutil.move(file, new_file_path)
+def move_file(file, new_file_path, param=False):
+    thread1 = Thread(target=shutil.move, args=(file, new_file_path))
+    thread1.start()
+    if param:
+        threads.append(thread1)
 
 
 def del_dirs(path):
@@ -44,13 +44,7 @@ def del_dirs(path):
         if directory.is_dir() and directory.name in folder_lst:
             continue
         else:
-            ...
-            # while True:
-            #     dir_lst = listdir(directory)
-            #     if dir_lst:
-            #         print(dir_lst)
-            #     else:
-            #         break
+            shutil.rmtree(directory)
 
 
 def same_file_check(file):
@@ -72,22 +66,30 @@ def handler(path):
     threads = []
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
-            thread = Thread(target=handler, args=(file, ))
+            handler(file)
+            thread = Thread(target=dir_handler, args=(file, ))
             thread.start()
             threads.append(thread)
-            # handler(file)
             continue
         elif file.is_dir() and file.name in folder_lst:
             continue
-        
+
+
+def dir_handler(path):
+    lst = [i for i in path.iterdir()]
+    n = 0
+    for file in lst:
+        if file.is_dir():
+            continue
         cat = get_category(file)
         new_path = make_file_path(file, cat)
         new_path = same_file_check(new_path)
+        n += 1
+        if n == len(lst):
+            move_file(file, new_path, param=True)
+            continue
         move_file(file, new_path)
 
-    [th.join() for th in threads]
-    del_dirs(path)
-        
 
 if __name__ == "__main__":
     try:
@@ -96,5 +98,10 @@ if __name__ == "__main__":
         print("Use path as an argument")
         exit()
     main_path = Path(" ".join(argv[1:]))
-    handler(main_path)
+    main_thread = Thread(target=handler, args=(main_path,))
+    main_thread.start()
+    threads.append(main_thread)
+    dir_handler(main_path)
+    [dr.join() for dr in threads]
+    del_dirs(main_path)
     print(time() - timer)
