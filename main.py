@@ -15,7 +15,6 @@ CATEGORIES = {"Images": [".jpg", ".gif", ".png", ".svg"],
               }
 
 folder_lst = ["Images", "Audio", "Documents", "Video", "Archives", "Others"]
-threads = []
 
 
 def get_category(file):
@@ -64,6 +63,7 @@ def same_file_check(file):
 
 
 def handler(path):
+    threads = []
     for file in path.iterdir():
         if file.is_dir() and file.name not in folder_lst:
             handler(file)
